@@ -1,0 +1,29 @@
+{
+    "name": "vsmoraes/kinesis",
+    "description": "Kinesis wrapper to make it easy to work with streams",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Vinicius Moraes",
+            "email": "vinicius@archlinux.com.br"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Vsmoraes\\Kinesis\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Vsmoraes\\Tests\\Kinesis\\": "tests/"
+        }
+    },
+    "require": {
+        "php": "^7.0",
+        "aws/aws-sdk-php": "^3.20"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^5.7"
+    }
+}
