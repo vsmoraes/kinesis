@@ -63,7 +63,7 @@ class Manager
             foreach ($recordResponse->get('Records') as $record) {
                 $lastSequenceNumber = $record['SequenceNumber'];
 
-                yield json_decode($record['Data']);
+                yield json_decode($record['Data'], true);
             }
 
             $shardIterator = $recordResponse->get('NextShardIterator');
