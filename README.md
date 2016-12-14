@@ -31,10 +31,10 @@ $kinesis = new KinesisClient([
     'profile' => 'default'
 ]);
 $checkpoint = new ResourceTagAdapter($kinesis);
-$manager = new Manager($kinesis, $checkpoint, 'stream-name-here');
+$manager = new Manager($kinesis, $checkpoint);
 
 $records = [];
-foreach ($manager->records() as $record) {
+foreach ($manager->records('stream-name-here') as $record) {
     $records[] = $record;
 }
 

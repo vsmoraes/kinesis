@@ -22,11 +22,6 @@ class Manager
     private $checkpoint;
 
     /**
-     * @var string
-     */
-    private $streamName;
-
-    /**
      * @var int
      */
     private $limit;
@@ -39,23 +34,23 @@ class Manager
     public function __construct(
         KinesisClient $kinesisClient,
         Checkpoint $checkpoint,
-        string $streamName,
         int $limit = self::DEFAULT_LIMIT,
         float $timeout = self::TIMEOUT
     ) {
         $this->kinesisClient = $kinesisClient;
         $this->checkpoint = $checkpoint;
-        $this->streamName = $streamName;
         $this->limit = $limit;
         $this->timeout = $timeout;
     }
 
     /**
+     * @param string $streamName
+     *
      * @return \Generator
      */
-    public function records()
+    public function records(string $streamName)
     {
-        $shardIterator = $this->firstShardIterator();
+        $shardIterator = $this->firstShardIterator($streamName);
         $lastSequenceNumber = null;
         $startTime = microtime(true);
 
@@ -74,7 +69,7 @@ class Manager
             $shardIterator = $recordResponse->get('NextShardIterator');
 
             if (! is_null($lastSequenceNumber)) {
-                $this->checkpoint->checkpoint($this->streamName, $lastSequenceNumber);
+                $this->checkpoint->checkpoint($streamName, $lastSequenceNumber);
             }
         }
     }
@@ -87,23 +82,28 @@ class Manager
         return $this->limit;
     }
 
+    /**
+     * @return float
+     */
     public function timeout(): float
     {
         return $this->timeout;
     }
 
     /**
+     * @param string $streamName
+     *
      * @return string
      */
-    protected function firstShardIterator(): string
+    protected function firstShardIterator(string $streamName): string
     {
         try {
-            $checkpoint = $this->checkpoint->shardIteratorParams($this->streamName, self::SHARD_ID);
+            $checkpoint = $this->checkpoint->shardIteratorParams($streamName, self::SHARD_ID);
 
             $result = $this->kinesisClient->getShardIterator($checkpoint);
         } catch (\Exception $exception) {
             $result = $this->kinesisClient->getShardIterator([
-                'StreamName' => $this->streamName,
+                'StreamName' => $streamName,
                 'ShardId' => self::SHARD_ID,
                 'ShardIteratorType' => 'TRIM_HORIZON',
             ]);

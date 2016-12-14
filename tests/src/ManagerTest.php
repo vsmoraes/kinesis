@@ -51,10 +51,10 @@ class ManagerTest extends \PHPUnit_Framework_TestCase
             ->method('shardIteratorParams')
             ->willReturn(['foo']);
 
-        $manager = new Manager($kinesisMock, $checkpointMock, $streamName, Manager::DEFAULT_LIMIT, 0.0001);
+        $manager = new Manager($kinesisMock, $checkpointMock, Manager::DEFAULT_LIMIT, 0.0001);
 
         $result = [];
-        foreach ($manager->records() as $record) {
+        foreach ($manager->records($streamName) as $record) {
             $result[] = $record;
         }
     }
