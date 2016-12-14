@@ -9,7 +9,7 @@ class Manager
 {
     const DEFAULT_LIMIT = 1000;
     const SHARD_ID = 'shardId-000000000000';
-    const TIMEOUT = 5;
+    const TIMEOUT = 5.0;
 
     /**
      * @var KinesisClient
