@@ -55,7 +55,7 @@ class Manager
         $startTime = microtime(true);
 
         while (microtime(true) - $startTime < $this->timeout()) {
-            $recordResponse = $this->kinesisClient->getRecords([
+            $recordResponse = $this->kinesisClient()->getRecords([
                 'ShardIterator' => $shardIterator,
                 'Limit' => $this->limit(),
             ]);
@@ -83,11 +83,25 @@ class Manager
     }
 
     /**
+     * @param float $timeout
+     *
      * @return float
      */
-    public function timeout(): float
+    public function timeout(float $timeout = null): float
     {
+        if (! is_null($timeout)) {
+            $this->timeout = $timeout;
+        }
+
         return $this->timeout;
+    }
+
+    /**
+     * @return KinesisClient
+     */
+    public function kinesisClient(): KinesisClient
+    {
+        return $this->kinesisClient;
     }
 
     /**
@@ -100,9 +114,9 @@ class Manager
         try {
             $checkpoint = $this->checkpoint->shardIteratorParams($streamName, self::SHARD_ID);
 
-            $result = $this->kinesisClient->getShardIterator($checkpoint);
+            $result = $this->kinesisClient()->getShardIterator($checkpoint);
         } catch (\Exception $exception) {
-            $result = $this->kinesisClient->getShardIterator([
+            $result = $this->kinesisClient()->getShardIterator([
                 'StreamName' => $streamName,
                 'ShardId' => self::SHARD_ID,
                 'ShardIteratorType' => 'TRIM_HORIZON',
