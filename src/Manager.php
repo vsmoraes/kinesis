@@ -136,7 +136,7 @@ class Manager
      */
     public function isDaemonized()
     {
-        return $this->timeout() === static::DAEMONIZED;
+        return $this->timeout() == static::DAEMONIZED;
     }
 
     /**
