@@ -7,8 +7,9 @@ use Vsmoraes\Kinesis\Checkpoint\Checkpoint;
 
 class Manager
 {
-    const DEFAULT_LIMIT = 1000;
+    const DEFAULT_TIMEMOUT = 1000;
     const DAEMONIZED = -1;
+    const DEFAULT_SLEEP = 3.0;
     const SHARD_ID = 'shardId-000000000000';
     const TIMEOUT = 5.0;
 
@@ -32,16 +33,23 @@ class Manager
      */
     private $timeout;
 
+    /**
+     * @var float
+     */
+    protected $sleepDuration;
+
     public function __construct(
         KinesisClient $kinesisClient,
         Checkpoint $checkpoint,
-        int $limit = self::DEFAULT_LIMIT,
-        float $timeout = self::TIMEOUT
+        int $limit = self::DEFAULT_TIMEMOUT,
+        float $timeout = self::TIMEOUT,
+        float $sleepDuration = self::DEFAULT_SLEEP
     ) {
         $this->kinesisClient = $kinesisClient;
         $this->checkpoint = $checkpoint;
         $this->limit = $limit;
         $this->timeout = $timeout;
+        $this->sleepDuration = $sleepDuration;
     }
 
     /**
@@ -72,6 +80,10 @@ class Manager
             if (! is_null($lastSequenceNumber)) {
                 $this->checkpoint->checkpoint($streamName, $lastSequenceNumber);
             }
+
+            if ($this->isDaemonized()) {
+                sleep($this->sleep());
+            }
         }
     }
 
@@ -84,7 +96,7 @@ class Manager
     }
 
     /**
-     * @param float $timeout
+     * @param float|null $timeout
      *
      * @return float
      */
@@ -98,11 +110,33 @@ class Manager
     }
 
     /**
+     * @param float|null $sleepDuration sleep duration in seconds
+     *
+     * @return float
+     */
+    public function sleep(float $sleepDuration = null): float
+    {
+        if (! is_null($sleepDuration)) {
+            $this->sleepDuration = $sleepDuration;
+        }
+
+        return $this->sleepDuration;
+    }
+
+    /**
      * @return KinesisClient
      */
     public function kinesisClient(): KinesisClient
     {
         return $this->kinesisClient;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isDaemonized()
+    {
+        return $this->timeout() === static::DAEMONIZED;
     }
 
     /**
@@ -134,7 +168,7 @@ class Manager
      */
     protected function loopConfig($startTime): bool
     {
-        if ($this->timeout() === static::DAEMONIZED) {
+        if ($this->isDaemonized()) {
             return true;
         }
 
