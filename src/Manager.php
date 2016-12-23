@@ -8,6 +8,7 @@ use Vsmoraes\Kinesis\Checkpoint\Checkpoint;
 class Manager
 {
     const DEFAULT_LIMIT = 1000;
+    const DAEMONIZED = -1;
     const SHARD_ID = 'shardId-000000000000';
     const TIMEOUT = 5.0;
 
@@ -54,7 +55,7 @@ class Manager
         $lastSequenceNumber = null;
         $startTime = microtime(true);
 
-        while (microtime(true) - $startTime < $this->timeout()) {
+        while ($this->loopConfig($startTime)) {
             $recordResponse = $this->kinesisClient()->getRecords([
                 'ShardIterator' => $shardIterator,
                 'Limit' => $this->limit(),
@@ -124,5 +125,19 @@ class Manager
         }
 
         return $result->get('ShardIterator');
+    }
+
+    /**
+     * @param $startTime
+     *
+     * @return bool
+     */
+    protected function loopConfig($startTime): bool
+    {
+        if ($this->timeout() === static::DAEMONIZED) {
+            return true;
+        }
+
+        return microtime(true) - $startTime < $this->timeout();
     }
 }
