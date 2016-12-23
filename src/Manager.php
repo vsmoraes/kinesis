@@ -2,6 +2,7 @@
 
 namespace Vsmoraes\Kinesis;
 
+use Aws\Kinesis\Exception\KinesisException;
 use Aws\Kinesis\KinesisClient;
 use Vsmoraes\Kinesis\Checkpoint\Checkpoint;
 
@@ -12,6 +13,7 @@ class Manager
     const DEFAULT_SLEEP = 3.0;
     const SHARD_ID = 'shardId-000000000000';
     const TIMEOUT = 5.0;
+    const KINESIS_LIMIT_EXCEEDED = 'LimitExceededException';
 
     /**
      * @var KinesisClient
@@ -64,10 +66,17 @@ class Manager
         $startTime = microtime(true);
 
         while ($this->loopConfig($startTime)) {
-            $recordResponse = $this->kinesisClient()->getRecords([
-                'ShardIterator' => $shardIterator,
-                'Limit' => $this->limit(),
-            ]);
+            try {
+                $recordResponse = $this->kinesisClient()->getRecords([
+                    'ShardIterator' => $shardIterator,
+                    'Limit' => $this->limit(),
+                ]);
+            } catch (KinesisException $exception) {
+                if ($exception->getAwsErrorType() == self::KINESIS_LIMIT_EXCEEDED) {
+                    sleep(1);
+                    continue;
+                }
+            }
 
             foreach ($recordResponse->get('Records') as $record) {
                 $lastSequenceNumber = $record['SequenceNumber'];

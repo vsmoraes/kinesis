@@ -2,8 +2,10 @@
 
 namespace Vsmoraes\Kinesis\Checkpoint\Adapter;
 
+use Aws\Kinesis\Exception\KinesisException;
 use Aws\Kinesis\KinesisClient;
 use Vsmoraes\Kinesis\Checkpoint\Checkpoint;
+use Vsmoraes\Kinesis\Manager;
 
 class ResourceTagAdapter implements Checkpoint
 {
@@ -38,10 +40,17 @@ class ResourceTagAdapter implements Checkpoint
      */
     public function checkpoint(string $streamName, string $sequenceNumber)
     {
-        $this->kinesisClient->addTagsToStream([
-            'StreamName' => $streamName,
-            'Tags' => [self::TAG_NAME => $sequenceNumber],
-        ]);
+        try {
+            $this->kinesisClient->addTagsToStream([
+                'StreamName' => $streamName,
+                'Tags' => [self::TAG_NAME => $sequenceNumber],
+            ]);
+        } catch (KinesisException $exception) {
+            if ($exception->getAwsErrorType() == Manager::KINESIS_LIMIT_EXCEEDED) {
+                sleep(1);
+                $this->checkpoint($streamName, $sequenceNumber);
+            }
+        }
     }
 
     /**
